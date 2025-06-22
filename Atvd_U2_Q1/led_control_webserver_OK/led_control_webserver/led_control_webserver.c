@@ -7,12 +7,8 @@
 #include <stdio.h>
 
 // --- CONFIGURAÇÕES - ALTERE AQUI ---
-#define WIFI_SSID "TP-LINK_52D0"
-#define WIFI_PASSWORD "92383104"
-
-// IP e Porta do servidor que receberá os dados
-#define SERVER_IP     "192.168.1.106"
-#define SERVER_PORT   4444
+#define WIFI_SSID "xxxxx"
+#define WIFI_PASSWORD "xxxxx"
 
 // Pino do botão (conecte um botão entre o pino GP5 e o GND)
 #define BUTTON_PIN    5
