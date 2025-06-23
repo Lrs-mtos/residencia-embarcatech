@@ -13,6 +13,10 @@
 // Pino do botão (conecte um botão entre o pino GP5 e o GND)
 #define BUTTON_PIN    5
 
+// IP e Porta do servidor que receberá os dados
+#define SERVER_IP     "192.168.1.100" // Ex: IP do seu computador
+#define SERVER_PORT   4444
+
 // Intervalo para enviar os dados (em milissegundos)
 #define SEND_INTERVAL_MS 1000
 // --- FIM DAS CONFIGURAÇÕES ---

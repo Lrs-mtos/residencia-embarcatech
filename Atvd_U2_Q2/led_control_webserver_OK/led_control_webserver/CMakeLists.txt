@@ -1,0 +1,59 @@
+cmake_minimum_required(VERSION 3.13)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
+# == DO NOT EDIT THE FOLLOWING LINES for the Raspberry Pi Pico VS Code Extension to work ==
+if(WIN32)
+    set(USERHOME $ENV{USERPROFILE})
+else()
+    set(USERHOME $ENV{HOME})
+endif()
+set(sdkVersion 1.5.1)
+set(toolchainVersion 13_2_Rel1)
+set(picotoolVersion 2.0.0)
+set(picoVscode ${USERHOME}/.pico-sdk/cmake/pico-vscode.cmake)
+if (EXISTS ${picoVscode})
+    include(${picoVscode})
+endif()
+# ====================================================================================
+set(PICO_BOARD pico_w CACHE STRING "Board type")
+
+# Pull in Raspberry Pi Pico SDK (must be before project)
+include(pico_sdk_import.cmake)
+
+project(led_control_webserver C CXX ASM)
+
+# Initialise the Raspberry Pi Pico SDK
+pico_sdk_init()
+
+add_executable(led_control_webserver
+    led_control_webserver.c
+)
+
+pico_set_program_name(led_control_webserver "led_control_webserver")
+pico_set_program_version(led_control_webserver "0.1")
+
+# Add the project directory to the include path.
+# This allows the compiler to find your custom lwipopts.h file.
+# <-- THIS IS THE CRITICAL FIX
+target_include_directories(led_control_webserver PRIVATE
+    ${CMAKE_CURRENT_LIST_DIR}
+)
+
+# Modify the below lines to enable/disable output over UART/USB
+pico_enable_stdio_uart(led_control_webserver 0)
+pico_enable_stdio_usb(led_control_webserver 1)
+
+# Link essential libraries for a Pico W web server
+target_link_libraries(led_control_webserver PRIVATE
+    pico_stdlib
+    hardware_gpio
+    hardware_adc
+    pico_cyw43_arch_lwip_threadsafe_background
+    pico_lwip_http
+)
+
+# This command is needed to generate .uf2, .hex, etc. files
+pico_add_extra_outputs(led_control_webserver)
