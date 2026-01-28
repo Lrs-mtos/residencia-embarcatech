@@ -19,10 +19,10 @@
 #define MEM_LIBC_MALLOC             0
 #endif
 #define MEM_ALIGNMENT               4
-#define MEM_SIZE                    8000
+#define MEM_SIZE                    16000
 #define MEMP_NUM_TCP_SEG            32
 #define MEMP_NUM_ARP_QUEUE          10
-#define PBUF_POOL_SIZE              8
+#define PBUF_POOL_SIZE              16
 #define PBUF_POOL_BUFSIZE           512
 #define LWIP_ARP                    1
 #define LWIP_ETHERNET               1
@@ -53,9 +53,9 @@
 #define LWIP_DHCP_DOES_ACD_CHECK    0
 
 #ifndef NDEBUG
-#define LWIP_DEBUG                  1
-#define LWIP_STATS                  1
-#define LWIP_STATS_DISPLAY          1
+#define LWIP_DEBUG                  0
+#define LWIP_STATS                  0
+#define LWIP_STATS_DISPLAY          0
 #endif
 
 #define ETHARP_DEBUG                LWIP_DBG_OFF

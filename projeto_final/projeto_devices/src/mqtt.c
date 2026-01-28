@@ -18,7 +18,7 @@
 #include "common.h"
 
 
-// Credenciais e Configurações (Baseadas no seu código)
+// Credenciais e Configurações
 #define WIFI_SSID "TP-LINK_52D0"
 #define WIFI_PASSWORD "92383104"
 #define MQTT_BROKER "broker.hivemq.com"
@@ -29,6 +29,7 @@ extern QueueHandle_t xStationQueue;
 static mqtt_client_t *mqtt_client;
 static ip_addr_t broker_ip;
 static bool mqtt_connected = false;
+static bool wifi_connected = false;
 
 // Callback de conexão MQTT
 static void mqtt_connection_callback(mqtt_client_t *client, void *arg, mqtt_connection_status_t status) {
@@ -60,23 +61,16 @@ void vMqttTask(void *pvParameters) {
     station_data_t data;
     char payload[150];
 
-    // 1. Inicializa WiFi
-    if (cyw43_arch_init()) {
-        printf("Falha ao iniciar WiFi\n");
-        vTaskDelete(NULL);
+    // Aguarda WiFi estar conectado antes de iniciar MQTT
+    printf("[MQTT] Aguardando WiFi conectar...\n");
+    while (!wifi_connected) {
+        vTaskDelay(pdMS_TO_TICKS(1000));
     }
-    cyw43_arch_enable_sta_mode(); //
-    
-    printf("[WiFi] Conectando a %s...\n", WIFI_SSID); //
-    while (cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000)) {
-        printf("[WiFi] Tentando reconectar...\n");
-        vTaskDelay(pdMS_TO_TICKS(5000));
-    }
-    printf("[WiFi] Conectado!\n"); //
+    printf("[MQTT] WiFi conectado, iniciando MQTT...\n");
 
     // 2. Inicializa Cliente MQTT
-    mqtt_client = mqtt_client_new(); //
-    dns_gethostbyname(MQTT_BROKER, &broker_ip, dns_callback, NULL); //
+    mqtt_client = mqtt_client_new();
+    dns_gethostbyname(MQTT_BROKER, &broker_ip, dns_callback, NULL);
 
     while (true) {
         cyw43_arch_poll(); // Mantém a pilha de rede viva
@@ -89,10 +83,50 @@ void vMqttTask(void *pvParameters) {
                      data.drawer_open ? "true" : "false",
                      data.alert_active ? "true" : "false");
 
-            mqtt_publish(mqtt_client, MQTT_TOPIC, payload, strlen(payload), 1, 0, NULL, NULL); //
+            mqtt_publish(mqtt_client, MQTT_TOPIC, payload, strlen(payload), 1, 0, NULL, NULL);
             printf("[MQTT] Publicado: %s\n", payload);
         }
 
         vTaskDelay(pdMS_TO_TICKS(5000)); // Publica a cada 5 segundos
+    }
+}
+
+// ============================================================
+// ============================================================
+// WiFi Task - Reconexão e Polling (inicialização feita no main)
+// ============================================================
+void vWifiTask(void *pvParameters) {
+    printf("[WiFi] WiFi Task iniciada - hardware já inicializado no main\n");
+
+    // Loop de reconexão com timeout não-bloqueante
+    int reconnect_attempts = 0;
+    while (true) {
+        if (!wifi_connected) {
+            reconnect_attempts++;
+            printf("[WiFi] Tentativa #%d de conexão a %s...\n", reconnect_attempts, WIFI_SSID);
+            
+            // 30 segundos de timeout
+            int result = cyw43_arch_wifi_connect_timeout_ms(WIFI_SSID, WIFI_PASSWORD, CYW43_AUTH_WPA2_AES_PSK, 30000);
+            
+            if (result == 0) {
+                wifi_connected = true;
+                printf("[WiFi] ✓ Conectado com sucesso!\n");
+                reconnect_attempts = 0;
+            } else {
+                printf("[WiFi] ✗ Falha na conexão (código: %d)\n", result);
+                
+                // Após 3 tentativas, aguarda mais tempo
+                if (reconnect_attempts >= 3) {
+                    printf("[WiFi] Aguardando 10s antes de próxima tentativa...\n");
+                    vTaskDelay(pdMS_TO_TICKS(10000));
+                } else {
+                    vTaskDelay(pdMS_TO_TICKS(2000));
+                }
+            }
+        } else {
+            // Mantém WiFi vivo com polling
+            cyw43_arch_poll();
+            vTaskDelay(pdMS_TO_TICKS(50)); // Poll a cada 50ms
+        }
     }
 }

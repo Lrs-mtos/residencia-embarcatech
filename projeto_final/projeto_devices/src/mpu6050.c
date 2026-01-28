@@ -5,14 +5,15 @@
 
 void mpu_init() {
     uint8_t buf[] = {0x6B, 0x00}; // Wake up
-    i2c_write_blocking(MPU_I2C, MPU_ADDR, buf, 2, false);
+    i2c_write_blocking(MPU6050_I2C_PORT, MPU_ADDR, buf, 2, false);
 }
 
 void mpu_read_data(float *roll, bool *drawer_open) {
     uint8_t reg = 0x3B;
     uint8_t data[6];
-    i2c_write_blocking(MPU_I2C, MPU_ADDR, &reg, 1, true);
-    i2c_read_blocking(MPU_I2C, MPU_ADDR, data, 6, false);
+    i2c_write_blocking(MPU6050_I2C_PORT, MPU_ADDR, &reg, 1, true);
+    sleep_ms(80);
+    i2c_read_blocking(MPU6050_I2C_PORT, MPU_ADDR, data, 6, false);
 
     int16_t acc_x = (data[0] << 8) | data[1];
     int16_t acc_y = (data[2] << 8) | data[3];
